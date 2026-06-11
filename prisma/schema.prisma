@@ -1,0 +1,133 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Manglik {
+  YES
+  NO
+  DOESNT_MATTER
+}
+
+enum MembershipTier {
+  FREE
+  SILVER
+  GOLD
+  PLATINUM
+}
+
+enum InterestStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+}
+
+model User {
+  id        String         @id @default(cuid())
+  email     String?        @unique
+  phone     String         @unique
+  password  String?
+  role      String         @default("user")
+  tier      MembershipTier @default(FREE)
+  createdAt DateTime       @default(now())
+  profile           Profile?
+  sentInterests     Interest[]   @relation("SentInterests")
+  receivedInterests Interest[]   @relation("ReceivedInterests")
+  sentMessages      Message[]    @relation("SentMessages")
+  memberships       Membership[]
+  payments          Payment[]
+}
+
+model Profile {
+  id           String    @id @default(cuid())
+  userId       String    @unique
+  user         User      @relation(fields: [userId], references: [id])
+  name         String
+  gender       String
+  dob          DateTime
+  religion     String
+  caste        String?
+  subCaste     String?
+  gotra        String?
+  manglik      Manglik   @default(DOESNT_MATTER)
+  motherTongue String?
+  height       Int?
+  complexion   String?
+  education    String?
+  occupation   String?
+  annualIncome String?
+  familyType   String?
+  familyValues String?
+  nriStatus    Boolean   @default(false)
+  bio          String?
+  city         String?
+  state        String?
+  country      String    @default("India")
+  kundliUrl    String?
+  verified     Boolean   @default(false)
+  photos       Photo[]
+  horoscope    Horoscope?
+  createdAt    DateTime  @default(now())
+}
+
+model Photo {
+  id        String  @id @default(cuid())
+  profileId String
+  profile   Profile @relation(fields: [profileId], references: [id])
+  url       String
+  isPrimary Boolean @default(false)
+}
+
+model Horoscope {
+  id         String  @id @default(cuid())
+  profileId  String  @unique
+  profile    Profile @relation(fields: [profileId], references: [id])
+  rashi      String?
+  nakshatra  String?
+  birthTime  String?
+  birthPlace String?
+}
+
+model Interest {
+  id         String         @id @default(cuid())
+  senderId   String
+  sender     User           @relation("SentInterests", fields: [senderId], references: [id])
+  receiverId String
+  receiver   User           @relation("ReceivedInterests", fields: [receiverId], references: [id])
+  status     InterestStatus @default(PENDING)
+  createdAt  DateTime       @default(now())
+}
+
+model Message {
+  id         String   @id @default(cuid())
+  senderId   String
+  sender     User     @relation("SentMessages", fields: [senderId], references: [id])
+  receiverId String
+  content    String
+  createdAt  DateTime @default(now())
+}
+
+model Membership {
+  id        String         @id @default(cuid())
+  userId    String
+  user      User           @relation(fields: [userId], references: [id])
+  tier      MembershipTier
+  startDate DateTime       @default(now())
+  endDate   DateTime
+}
+
+model Payment {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id])
+  razorpayId String?
+  amount     Int
+  currency   String   @default("INR")
+  status     String
+  invoiceUrl String?
+  createdAt  DateTime @default(now())
+}
